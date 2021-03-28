@@ -34,6 +34,7 @@ getDraftR = do
 getQuestionR :: Int -> Handler Html
 getQuestionR id = do
     question <- liftIO $ questionFromID id
+    let hello = init $ tail $ htmlParse question
     defaultLayout [whamlet|
         <!DOCTYPE html>
         <html>
@@ -44,7 +45,7 @@ getQuestionR id = do
                 <link href="/style.css" rel="stylesheet" type="text/css"/>
             <body>
                 <h1>Question:
-                <p>#{question}
+                <p>#{hello}
                 <h1>Response:
                 <form action="" method="post">
                     <textarea name="question-textarea" rows="4" cols="50">
@@ -72,12 +73,16 @@ questionFromID id = do
     contents <- hGetContents handle
     return contents
     
-
 logNumber :: IO Int
 logNumber = do
     handle <- openFile "number" ReadWriteMode
     contents <- hGetContents handle
     return (read contents :: Int)
+
+htmlParse :: String -> String
+htmlParse ('\\':'r':'\\':'n':xs) = '<' : 'b' : 'r' : '>' : htmlParse xs
+htmlParse (x:xs)       = x : htmlParse xs
+htmlParse ""           = ""
 
 main :: IO ()
 main = warp 3000 LaHacks
