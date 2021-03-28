@@ -34,12 +34,14 @@ getDraftR = do
 postDraftR :: Handler Html
 postDraftR = do
     number <- liftIO $ logNumber
-    hello <- lookupPostParam "question-textarea"
+    question <- lookupPostParam "question-textarea"
     case question of
         Nothing -> redirect HomeR
         Just question -> do
-            liftIO $ print number
-            liftIO $ writeFile ("questions/" ++ (show $ number)) (show $ hello)
+            liftIO $ putStrLn $ "New question: " ++ (show $ number)
+            -- Write question to file
+            liftIO $ writeFile ("questions/" ++ (show $ number)) (show $ question)
+            -- Update number file
             liftIO $ writeFile "number" (show $ number + 1)
             redirect DraftR
 
