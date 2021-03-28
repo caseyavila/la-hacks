@@ -2,6 +2,7 @@
 {-# LANGUAGE QuasiQuotes           #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
+import System.IO
 import Yesod
 import Text.Lucius
 
@@ -13,7 +14,7 @@ data LaHacks = LaHacks
 mkYesod "LaHacks" [parseRoutes|
 /style.css StyleR GET
 / HomeR GET
-/draft DraftR GET --POST
+/draft DraftR GET POST
 |]
 
 instance Yesod LaHacks
@@ -30,14 +31,23 @@ getDraftR :: Handler Html
 getDraftR = do
     sendFile "text/html" "site/draft.html"
 
-{-  Garbage code btw
 postDraftR :: Handler Html
 postDraftR = do
-    value <- lookupPostParam "question-textarea"
-    case value of
-        Just value -> return ()
-        Nothing -> putStrLn "No value." 
-    sendFile "text/html" "site/draft.html" -}
+    number <- liftIO $ logNumber
+    hello <- lookupPostParam "question-textarea"
+    case question of
+        Nothing -> redirect HomeR
+        Just question -> do
+            liftIO $ print number
+            liftIO $ writeFile ("questions/" ++ (show $ number)) (show $ hello)
+            liftIO $ writeFile "number" (show $ number + 1)
+            redirect DraftR
+
+logNumber :: IO Int
+logNumber = do
+    handle <- openFile "number" ReadWriteMode
+    contents <- hGetContents handle
+    return (read contents :: Int)
 
 main :: IO ()
 main = warp 3000 LaHacks
