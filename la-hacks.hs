@@ -13,6 +13,7 @@ data LaHacks = LaHacks
 
 mkYesod "LaHacks" [parseRoutes|
 /style.css StyleR GET
+/otherstyle.css OtherStyleR GET
 / HomeR GET
 /draft DraftR GET POST
 /question/#Int QuestionR GET POST
@@ -23,6 +24,10 @@ instance Yesod LaHacks
 getStyleR :: Handler Css
 getStyleR = do
     sendFile "text/css" "site/style.css"
+
+getOtherStyleR :: Handler Css
+getOtherStyleR = do
+    sendFile "text/css" "site/otherstyle.css"
 
 getHomeR :: Handler Html
 getHomeR = do 
@@ -60,8 +65,8 @@ getQuestionR id = do
             <head>
                 <meta charset="utf-8">
                 <meta name="viewport" content="width=device-width">
-                <title>la-hacks
-                <link href="/style.css" rel="stylesheet" type="text/css"/>
+                <title>Metis
+                <link href="/otherstyle.css" rel="stylesheet" type="text/css"/>
             <body>
                 <h1>Question:
                 <p>#{hello}
