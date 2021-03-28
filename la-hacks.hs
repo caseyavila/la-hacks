@@ -2,19 +2,19 @@
 {-# LANGUAGE QuasiQuotes           #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE ViewPatterns          #-}
+
 import System.IO
 import Yesod
 import Text.Lucius
 
 data LaHacks = LaHacks
 
--- TODO: Figure out how to handle post requests on server-side, return the user
--- a web page containing the newly-created forum.
-
 mkYesod "LaHacks" [parseRoutes|
 /style.css StyleR GET
 / HomeR GET
 /draft DraftR GET POST
+/question/#Int QuestionR GET
 |]
 
 instance Yesod LaHacks
@@ -31,19 +31,47 @@ getDraftR :: Handler Html
 getDraftR = do
     sendFile "text/html" "site/draft.html"
 
+getQuestionR :: Int -> Handler Html
+getQuestionR id = do
+    question <- liftIO $ questionFromID id
+    defaultLayout [whamlet|
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width">
+                <title>la-hacks
+                <link href="/style.css" rel="stylesheet" type="text/css"/>
+            <body>
+                <h1>Question:
+                <p>#{question}
+                <h1>Response:
+                <form action="" method="post">
+                    <textarea name="question-textarea" rows="4" cols="50">
+                    <div>
+                        <input type="submit" value="Submit"/>
+|]
+
 postDraftR :: Handler Html
 postDraftR = do
     number <- liftIO $ logNumber
-    question <- lookupPostParam "question-textarea"
+    question <- lookupPostParam "draft-textarea"
     case question of
-        Nothing -> redirect HomeR
+        Nothing -> redirect DraftR
         Just question -> do
             liftIO $ putStrLn $ "New question: " ++ (show $ number)
             -- Write question to file
             liftIO $ writeFile ("questions/" ++ (show $ number)) (show $ question)
             -- Update number file
             liftIO $ writeFile "number" (show $ number + 1)
-            redirect DraftR
+            redirect $ QuestionR number
+
+questionFromID :: Int -> IO String
+questionFromID id = do
+    handle <- openFile ("questions/" ++ (show $ id)) ReadWriteMode
+    contents <- hGetContents handle
+    return contents
+    
 
 logNumber :: IO Int
 logNumber = do
